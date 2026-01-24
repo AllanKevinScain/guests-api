@@ -2,9 +2,7 @@ import { db } from "../database/db";
 import { normalizeName } from "../helpers/format";
 
 export async function listGuests(req, res) {
-  const database = await db;
-
-  const guests = await database.all(`
+  const guests = await db.execute(`
     SELECT *
     FROM guests
     ORDER BY tableNumber DESC, name ASC
@@ -20,8 +18,7 @@ export async function addGuest(req, res) {
     return res.status(400).json({ message: "Dados inválidos" });
   }
 
-  const database = await db;
-  await database.run(
+  await db.execute(
     "INSERT INTO guests (name, tableNumber, approved) VALUES (?, ?, ?)",
     [normalizeName(name), tableNumber, false],
   );
@@ -35,8 +32,7 @@ export async function deleteGuest(req, res) {
     return res.status(400).json({ message: "Dados inválidos" });
   }
 
-  const database = await db;
-  await database.run("DELETE FROM guests WHERE id = ?", id);
+  await db.execute("DELETE FROM guests WHERE id = ?", id);
   res.send();
 }
 
@@ -48,8 +44,7 @@ export async function editGuest(req, res) {
     return res.status(400).json({ message: "Dados inválidos" });
   }
 
-  const database = await db;
-  await database.run(
+  await db.execute(
     "UPDATE guests SET name = ?, tableNumber = ?, approved = ? WHERE id = ?",
     [normalizeName(name), tableNumber, approved, id],
   );
@@ -58,8 +53,7 @@ export async function editGuest(req, res) {
 
 export async function getGuestById(req, res) {
   const { id } = req.params;
-  const database = await db;
-  const guest = await database.get("SELECT * FROM guests WHERE id = ?", id);
+  const guest = await db.execute("SELECT * FROM guests WHERE id = ?", id);
 
   if (!guest) {
     return res.status(404).json({ message: "Convidado não encontrado" });
@@ -77,8 +71,7 @@ export async function approveGuest(req, res) {
 
   const guest = await getGuestById(req, res);
 
-  const database = await db;
-  await database.run(
+  await db.execute(
     `UPDATE guests SET name = ?, tableNumber = ? WHERE id = ?, WHERE approved = ?`,
     [...guest, !guest.approved],
   );

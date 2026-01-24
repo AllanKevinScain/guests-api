@@ -1,19 +1,6 @@
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
+import { createClient } from "@libsql/client";
 
-export const db = open({
-  filename: "guests.sqlite",
-  driver: sqlite3.Database,
+export const db = createClient({
+  url: process.env.TURSO_DATABASE_URL as string,
+  authToken: process.env.TURSO_AUTH_TOKEN as string,
 });
-
-export async function initDb() {
-  const database = await db;
-  await database.exec(`
-    CREATE TABLE IF NOT EXISTS guests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      tableNumber INTEGER NOT NULL,
-      approved BOOLEAN NOT NULL
-    )
-  `);
-}
