@@ -1,79 +1,121 @@
 import { db } from "../database/db";
 import { normalizeName } from "../helpers/format";
+import { Request, Response } from "express";
+import { ReturnType } from "../types/Guest.type";
 
-export async function listGuests(req, res) {
-  const guests = await db.execute(`
+export async function listGuests(req: Request, res: Response) {
+  try {
+    const guests = await db.execute(`
     SELECT *
     FROM guests
     ORDER BY tableNumber DESC, name ASC
   `);
-
-  res.json(guests);
+    res.json(guests.rows);
+  } catch (error) {
+    res.status(500).json({ message: error || "Erro ao buscar convidados" });
+  }
 }
 
-export async function addGuest(req, res) {
+export async function getGuestById(req: Request, res: Response) {
+  const id = Number(req.params.id);
+
+  try {
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ message: "ID inválido" });
+    }
+
+    const request = await db.execute("SELECT * FROM guests WHERE id = ?", [id]);
+    const result = await request.toJSON();
+    if (!result) {
+      return res.status(404).json({ message: "Convidado não encontrado" });
+    }
+
+    res.json(request.rows[0]);
+  } catch (error) {
+    res.status(500).json({ message: error || "Erro ao buscar convidado" });
+  }
+}
+
+export async function addGuest(req: Request, res: Response) {
   const { name, tableNumber } = req.body;
 
-  if (!name || tableNumber < 1 || tableNumber > 30) {
-    return res.status(400).json({ message: "Dados inválidos" });
-  }
+  try {
+    if (!name || tableNumber < 1 || tableNumber > 30) {
+      return res.status(400).json({ message: "Dados inválidos" });
+    }
 
-  await db.execute(
-    "INSERT INTO guests (name, tableNumber, approved) VALUES (?, ?, ?)",
-    [normalizeName(name), tableNumber, false],
-  );
-  res.status(201).send();
+    const request = await db.execute(
+      "INSERT INTO guests (name, tableNumber, approved) VALUES (?, ?, ?)",
+      [normalizeName(name), tableNumber, false],
+    );
+    const response = (await request.toJSON()) as ReturnType;
+
+    if (response.rowsAffected) {
+      res.json({ message: "Convidado criado com sucesso!" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error || "Erro ao adicionar convidado" });
+  }
 }
 
-export async function deleteGuest(req, res) {
-  const { id } = req.params;
-
-  if (!id) {
-    return res.status(400).json({ message: "Dados inválidos" });
-  }
-
-  await db.execute("DELETE FROM guests WHERE id = ?", id);
-  res.send();
-}
-
-export async function editGuest(req, res) {
-  const { id } = req.params;
+export async function editGuest(req: Request, res: Response) {
+  const id = Number(req.params.id);
   const { name, tableNumber, approved = false } = req.body;
 
-  if (!name || tableNumber < 1 || tableNumber > 30) {
-    return res.status(400).json({ message: "Dados inválidos" });
-  }
+  try {
+    if (!id) {
+      return res.status(400).json({ message: "identificador inválido" });
+    }
 
-  await db.execute(
-    "UPDATE guests SET name = ?, tableNumber = ?, approved = ? WHERE id = ?",
-    [normalizeName(name), tableNumber, approved, id],
-  );
-  res.send();
+    if (!name || tableNumber < 1 || tableNumber > 30) {
+      return res.status(400).json({ message: "Dados do formulário inválidos" });
+    }
+
+    const request = await db.execute(
+      "UPDATE guests SET name = ?, tableNumber = ?, approved = ? WHERE id = ?",
+      [normalizeName(name), tableNumber, approved, id],
+    );
+
+    const response = (await request.toJSON()) as ReturnType;
+    if (response.rowsAffected) {
+      res.json({ message: "Atualização feita com sucesso!" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error || "Erro ao editar convidado" });
+  }
 }
 
-export async function getGuestById(req, res) {
-  const { id } = req.params;
-  const guest = await db.execute("SELECT * FROM guests WHERE id = ?", id);
+export async function deleteGuest(req: Request, res: Response) {
+  const id = Number(req.params.id);
+  try {
+    if (!id) {
+      return res.status(400).json({ message: "identificador inválido" });
+    }
 
-  if (!guest) {
-    return res.status(404).json({ message: "Convidado não encontrado" });
+    const data = await db.execute("DELETE FROM guests WHERE id = ?", [id]);
+    res.status(201).json({ message: "Convidado deletado com sucesso!" });
+  } catch (error) {
+    res.status(500).json({ message: error || "Erro ao deletar convidado" });
   }
-
-  res.json(guest);
 }
 
-export async function approveGuest(req, res) {
-  const { id } = req.params;
+export async function approveGuest(req: Request, res: Response) {
+  const id = Number(req.params.id);
 
-  if (!id) {
-    return res.status(400).json({ message: "Dados inválidos" });
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ message: "Identificador inválido" });
   }
 
-  const guest = await getGuestById(req, res);
+  try {
+    const result = await db.execute(
+      "UPDATE guests SET approved = NOT approved WHERE id = ?",
+      [id],
+    );
 
-  await db.execute(
-    `UPDATE guests SET name = ?, tableNumber = ? WHERE id = ?, WHERE approved = ?`,
-    [...guest, !guest.approved],
-  );
-  res.send();
+    return res.status(200).json({
+      message: "Status do convidado atualizado com sucesso",
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Erro ao atualizar convidado" });
+  }
 }
