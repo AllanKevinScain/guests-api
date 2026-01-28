@@ -7,8 +7,10 @@ import { db } from "../database/db";
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       tableNumber INTEGER NOT NULL,
-      approved BOOLEAN NOT NULL
-    )
+      approved BOOLEAN NOT NULL,
+      payment TEXT NOT NULL DEFAULT 'PAYED'
+      CHECK (payment IN ('PAYED', 'PENDING'))
+    );
   `);
 
   console.log("🏁 Migrações executadas!");

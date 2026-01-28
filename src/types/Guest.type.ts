@@ -3,6 +3,7 @@ export type GuestType = {
   name: string;
   tableNumber: number;
   approved?: boolean;
+  payment?: "PAYED" | "PENDING";
 };
 
 export type ReturnType = {

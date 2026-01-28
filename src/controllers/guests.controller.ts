@@ -1,7 +1,7 @@
 import { db } from "../database/db";
 import { normalizeName } from "../helpers/format";
 import { Request, Response } from "express";
-import { ReturnType } from "../types/Guest.type";
+import { GuestType, ReturnType } from "../types/Guest.type";
 
 export async function listGuests(req: Request, res: Response) {
   try {
@@ -37,7 +37,12 @@ export async function getGuestById(req: Request, res: Response) {
 }
 
 export async function addGuest(req: Request, res: Response) {
-  const { name, tableNumber } = req.body;
+  const {
+    name,
+    tableNumber,
+    payment = "PAYED",
+    approved = false,
+  } = req.body as GuestType;
 
   try {
     if (!name || tableNumber < 1 || tableNumber > 30) {
@@ -45,8 +50,8 @@ export async function addGuest(req: Request, res: Response) {
     }
 
     const request = await db.execute(
-      "INSERT INTO guests (name, tableNumber, approved) VALUES (?, ?, ?)",
-      [normalizeName(name), tableNumber, false],
+      "INSERT INTO guests (name, tableNumber, approved, payment) VALUES (?, ?, ?, ?)",
+      [normalizeName(name), tableNumber, approved, payment],
     );
     const response = (await request.toJSON()) as ReturnType;
 
@@ -60,7 +65,12 @@ export async function addGuest(req: Request, res: Response) {
 
 export async function editGuest(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const { name, tableNumber, approved = false } = req.body;
+  const {
+    name,
+    tableNumber,
+    approved = false,
+    payment = "PAYED",
+  } = req.body as GuestType;
 
   try {
     if (!id) {
@@ -72,8 +82,8 @@ export async function editGuest(req: Request, res: Response) {
     }
 
     const request = await db.execute(
-      "UPDATE guests SET name = ?, tableNumber = ?, approved = ? WHERE id = ?",
-      [normalizeName(name), tableNumber, approved, id],
+      "UPDATE guests SET name = ?, tableNumber = ?, approved = ?, payment = ? WHERE id = ?",
+      [normalizeName(name), tableNumber, approved, payment, id],
     );
 
     const response = (await request.toJSON()) as ReturnType;
