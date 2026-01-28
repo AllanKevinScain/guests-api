@@ -21,4 +21,11 @@ app.use((req, _, next) => {
 
 app.use(guestsRoutes);
 
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 3333;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  });
+}
+
 export default app;
