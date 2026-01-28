@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "ts-node-dev src/index.ts",
     "mig": "ts-node src/spawn/index.ts",
-    "build": "tsc && npm run mig"
+    "build": "tsc",
+    "vercel-build": "npm run build && node dist/spawn/index.js"
   },
   "keywords": [],
   "author": "",
